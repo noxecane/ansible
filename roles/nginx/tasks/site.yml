@@ -1,0 +1,15 @@
+---
+- name: add app config
+  template:
+    src: app.conf
+    dest: "/etc/nginx/sites-available/{{ site_domain }}.conf"
+  notify:
+    - reload nginx
+
+- name: activate the application
+  file:
+    src: "/etc/nginx/sites-available/{{ site_domain }}.conf"
+    dest: "/etc/nginx/sites-enabled/{{ site_domain }}.conf"
+    state: link
+  notify:
+    - reload nginx

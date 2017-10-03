@@ -1,0 +1,9 @@
+- hosts: lafiya
+  tasks:
+    - name: Home dir
+      debug:
+        var: ansible_env.HOME
+    - name: Release
+      debug:
+        var: ansible_distribution_release
+

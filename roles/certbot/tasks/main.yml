@@ -1,0 +1,24 @@
+---
+- name: add certbot repo
+  apt_repository:
+    repo: "ppa:certbot/certbot"
+
+- name: install certbot
+  apt: 
+    name: certbot 
+    state: present
+    update_cache: yes
+  notify:
+    - stop nginx
+
+- name: generate dhparams file
+  command: openssl dhparam -out /etc/letsencrypt/live/{{ certbot_domains[0] }}/dhparam.pem 2048
+  args:
+    creates: /etc/letsencrypt/live/{{ certbot_domains[0] }}/dhparam.pem
+
+- name: create certificates
+  command: certbot certonly --standalone -n --agree-tos -m {{ certbot_email }} -d {{ certbot_domains|join(', ') }}
+  args:
+    creates: "/etc/letsencrypt/live/{{ certbot_domains[0] }}/fullchain.pem"
+  notify:
+    - start nginx

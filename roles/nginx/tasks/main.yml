@@ -1,0 +1,24 @@
+---
+- name: install nginx
+  apt: 
+    name: nginx 
+    state: present
+    update_cache: yes
+  
+- name: remove default nginx default
+  file: 
+    path: /etc/nginx/sites-enabled/default 
+    state: absent
+  when: nginx_disable_default
+
+- name: copy nginx module
+  copy:
+    src: mod
+    dest: /etc/nginx/
+
+- name: add default config
+  template: 
+    src: nginx.conf
+    dest: /etc/nginx/nginx.conf
+  notify:
+    - reload nginx

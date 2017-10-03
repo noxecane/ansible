@@ -1,0 +1,25 @@
+---
+- name: Setup apt
+  apt: 
+    name: apt-transport-https
+    state: present
+    update_cache: yes
+  with_items:
+    - apt-transport-https
+    - ca-certificates
+    - curl
+    - software-properties-common
+
+- name: Install utilities
+  apt:
+    name: "{{ item }}"
+    update_cache: yes
+  with_items:
+    - htop
+    - mlocate
+    - screen
+
+- name: Install on-premise shortcuts
+  copy:
+    src: aliases.sh
+    dest: "/home/{{ remote_user }}/.bash_aliases"
