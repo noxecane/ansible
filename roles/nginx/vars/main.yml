@@ -1,0 +1,5 @@
+---
+nginx_home: /etc/nginx
+nginx_config: "{{ nginx_home }}/nginx.conf"
+nginx_sites: "{{ nginx_home }}/sites-available"
+nginx_active_sites: "{{ nginx_home }}/sites-enabled"

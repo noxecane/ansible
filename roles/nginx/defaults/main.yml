@@ -2,5 +2,15 @@
 nginx_user: www-data
 nginx_disable_default: true
 nginx_log_dir: /var/log/nginx
+nginx_create_site: false
 
 site_use_stapling: true
+site_is_extra_secure: false
+site_is_extra_fast: false
+site_is_app: false
+site_app_type: proxied
+site_servers: []
+site_app_is_clojure: false
+site_app_can_stream: false
+site_has_custom_errors: false
+site_couchdb_is_hosted: false

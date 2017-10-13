@@ -1,0 +1,3 @@
+---
+node_source: https://deb.nodesource.com
+node_gpg_key: "{{ node_source }}/gpgkey/nodesource.gpg.key"

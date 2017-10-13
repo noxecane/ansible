@@ -1,206 +1,38 @@
 ---
 - hosts: lafiya
-  vars:
-    server_user:  arewa
-    nginx_user:   'www-data'
-    main_domain:  'tsaron.com'
-    app_domain:   'lafiya.tsaron.com'
-    couch_domain: 'couchdb.tsaron.com'
-    app_upstream: 'http://localhost:4200'
-    dist_dir:     "/srv/{{ server_user }}/lafiya"
-    ssl_dir:      "/etc/letsencrypt/live/{{ main_domain }}"
-    domains:      "{{main_domain}},{{app_domain}},{{couch_domain}}"
-    email:        'postmaster@tsaron.com'
-    repo_url:     'https://github.com/tsaron/dariya.git'
-    node_version: 'node_6.x'
   remote_user: arewa
   become: yes
-
+  vars:
+    - certbot_domains:
+      - tsaron.com
+      - www.tsaron.com
+      - lafiya.tsaron.com
+    - certbot_email: postmaster@tsaron.com
+    - nginx_create_site: true
+    - site_domain: 'lafiya.tsaron.com'
+    - ssl_home: /etc/letsencrypt/live/tsaron.com/
+    - site_certificate: "{{ ssl_home }}/fullchain.pem"
+    - site_ca_certificate: "{{ ssl_home }}/chain.pem"
+    - site_certificate_key: "{{ ssl_home }}/privkey.pem"
+    - site_dhparam: "{{ ssl_home }}/dhparam.pem"
+    - site_web_root: /home/arewa
+    - site_is_app: true
+    - site_servers:
+      - localhost:3000
+    - site_app_type: ember
+    - site_couchdb_is_hosted: true
+    - node_version: node_6.x
+    - lafiya_client_root: /srv/arewa/lafiya/app
+    - lafiya_client_repo: https://github.com/tsaron/dariya.git
+    - lafiya_server_root: /srv/arewa/lafiya/service
+    - lafiya_server_repo: https://github.com/tsaron/lafiya-backend.git
+  roles:
+    - {role: init, tags: init}
+    - {role: nginx, tags: ['server', 'ssl']}
+    - {role: certbot, tags: ssl}
+    - {role: nodejs, tags: nodejs}
+    - {role: couchdb, tags: ['db', 'server']}
+    - {role: app, tags: app}
   tasks:
-  - name: Setup apt
-    apt: 
-      name: apt-transport-https
-      state: present
-      update_cache: yes
-    with_items:
-      - apt-transport-https
-      - ca-certificates
-      - curl
-      - software-properties-common
-
-  - name: Install utilities
-    apt:
-      name: "{{ item }}"
-      update_cache: yes
-    with_items:
-      - htop
-      - mlocate
-      - screen
-      - python-pip
-
-  - name: Install on-premise shortcuts
-    copy:
-      src: files/aliases
-      dest: "/home/{{ server_user }}/.bash_aliases"
-
-  - name: Add certbot repo
-    apt_repository:
-      repo: "ppa:certbot/certbot"
-
-  - name: Install certbot
-    apt: 
-      name: certbot 
-      state: present
-      update_cache: yes
-    notify:
-      - Stop nginx
-
-  - name: Generate dhparams file
-    command: openssl dhparam -out /etc/ssl/certs/dhparam.pem 2048
-    args:
-      creates: /etc/ssl/certs/dhparam.pem
-  
-  - name: Install nginx
-    apt: 
-      name: nginx 
-      state: present
-      update_cache: yes
-  
-  - name: remove default nginx default
-    file: 
-      path: /etc/nginx/sites-enabled/default 
-      state: absent
-
-  - name: Create certificates
-    command: certbot certonly --standalone -n --agree-tos -m {{ email }} -d {{ domains }}
-    args:
-      creates: "{{ ssl_dir }}/fullchain.pem"
-    notify:
-      - Start nginx
-
-  - name: Add default config
-    template: 
-      src: files/nginx.conf
-      dest: /etc/nginx/nginx.conf
-    notify:
-      - Reload nginx
-
-  - name: Add couchdb nginx config
-    template:
-      src: files/couchdb.conf
-      dest: /etc/nginx/sites-available/couchdb.conf
-    notify:
-      - Reload nginx
-
-  - name: Activate couchdb conf
-    file:
-      src: /etc/nginx/sites-available/couchdb.conf
-      dest: /etc/nginx/sites-enabled/couchdb.conf
-      state: link
-    notify:
-      - Reload nginx
-
-  - name: Add lafiya nginx config
-    template:
-      src: files/proxy.conf
-      dest: /etc/nginx/sites-available/lafiya.conf
-    notify:
-      - Reload nginx
-
-  - name: Activate lafiya conf
-    file:
-      src: /etc/nginx/sites-available/lafiya.conf
-      dest: /etc/nginx/sites-enabled/lafiya.conf
-      state: link
-    notify:
-      - Reload nginx
-
-  - name: Install docker module
-    pip:
-      name: docker-py
-
-  - name: add apt key for nodesource
-    apt_key: 
-      url: https://deb.nodesource.com/gpgkey/nodesource.gpg.key
-
-  - name: add repo for nodesource
-    apt_repository:
-      repo: 'deb https://deb.nodesource.com/{{ node_version }} {{ ansible_distribution_release }} main' 
-
-  - name: install nodejs and dependencies
-    apt:
-      name: nodejs
-      update_cache: yes
-
-  - name: create dariya directory
-    file: 
-      path: "{{ dist_dir }}" 
-      state: directory
-      owner: arewa
-      group: arewa
-
-  - name: clone lafiya
-    git:
-      repo: "{{ repo_url }}"
-      dest: "{{ dist_dir }}"
-    become: true
-    become_user: arewa
-
-  - name: install ember-cli and bower
-    npm:
-      name: "{{ item }}"
-      global: yes
-    with_items:
-      - "ember-cli@latest"
-      - bower
-
-  - name: install npm dependencies
-    npm:
-      path: "{{ dist_dir }}"
-    become: true
-    become_user: arewa
-
-  - name: install bower dependencies
-    bower:
-      path: "{{ dist_dir }}"
-    become: true
-    become_user: arewa
-
-  - name: stat server config
-    stat: 
-      path: "{{ dist_dir }}/server/config-example.js"
-    register: server_config
-
-  - name: Create original server-config
-    command: mv {{ dist_dir }}/server/config-example.js {{ dist_dir }}/server/config.js
-    when: server_config.stat.exists
-    become: true
-    become_user: arewa
-
-  - name: Initialize couchdb
-    shell: ./script/initcouch.sh
-    args:
-      chdir: "{{ dist_dir }}"
-    become: true
-    become_user: arewa
-
-  - name: Upgrade all packages
-    apt:
-      upgrade: dist
-      update_cache: yes
-
-  handlers:
-    - name: Reload nginx
-      service:
-        name: nginx
-        state: reloaded
-
-    - name: Start nginx
-      service:
-        name: nginx
-        state: started
-
-    - name: Stop nginx
-      service:
-        name: nginx
-        state: stopped
+    - name: upgrade everything
+      apt: upgrade=dist update_cache=yes

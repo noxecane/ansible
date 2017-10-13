@@ -1,0 +1,24 @@
+---
+- hosts: beezglam
+  remote_user: arewa
+  become: yes
+  vars:
+    - certbot_domains:
+      - beezglam.com
+      - www.beezglam.com
+    - certbot_email: rootadmin@beezglam.com
+    - nginx_create_site: true
+    - site_domain: 'beezglam.com'
+    - ssl_home: /etc/letsencrypt/live/beezglam.com/
+    - site_certificate: "{{ ssl_home }}/fullchain.pem"
+    - site_ca_certificate: "{{ ssl_home }}/chain.pem"
+    - site_certificate_key: "{{ ssl_home }}/privkey.pem"
+    - site_dhparam: "{{ ssl_home }}/dhparam.pem"
+    - site_web_root: /srv/arewa/beezglam/public
+  roles:
+    - {role: init, tags: init}
+    - {role: nginx, tags: ['server', 'ssl']}
+    - {role: certbot, tags: ssl}
+  tasks:
+    - name: upgrade everything
+      apt: upgrade=dist update_cache=yes

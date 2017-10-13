@@ -1,0 +1,4 @@
+---
+devops_user: arewa
+lafiya_elastic_gpg: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+lafiya_elastic_source: https://artifacts.elastic.co/packages/5.x/apt

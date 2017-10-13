@@ -1,17 +1,10 @@
-- name: add apt key for nodesource
-  apt_key: 
-    url: https://deb.nodesource.com/gpgkey/nodesource.gpg.key
-
-- name: add repo for nodesource
-  apt_repository:
-    repo: 'deb https://deb.nodesource.com/{{ node_version }} {{ ansible_distribution_release }} main' 
-
-- name: install nodejs and dependencies
-  apt:
-    name: "{{ item }}"
-    update_cache: yes
-  with_items:
-    - build-essential
-    - python
-    - python-pip
-    - nodejs
+- name: install nodejs
+  block:
+    - apt_key: url={{ node_gpg_key }}
+    - apt_repository: repo='deb {{ node_source }}/{{ node_version }} {{ ansible_distribution_release }} main' 
+    - apt: name={{ item }} update_cache=yes
+      with_items:
+        - build-essential
+        - python
+        - python-pip
+        - nodejs

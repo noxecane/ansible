@@ -1,7 +1,7 @@
 ---
 - name: Setup apt
   apt: 
-    name: apt-transport-https
+    name: "{{ item }}"
     state: present
     update_cache: yes
   with_items:
@@ -22,4 +22,8 @@
 - name: Install on-premise shortcuts
   copy:
     src: aliases.sh
-    dest: "/home/{{ remote_user }}/.bash_aliases"
+    dest: "{{ shell_aliases }}"
+    owner: "{{ devops_user }}"
+    group: "{{ devops_user }}"
+  tags:
+    - shortcuts

@@ -1,0 +1,62 @@
+---
+- name: confirm all variables have been set
+  fail: 
+    msg: "{{ item }} is not defined"
+  when: item is not defined
+  with_items:
+    - lafiya_client_repo
+    - lafiya_server_repo
+    - lafiya_client_root
+    - lafiya_server_root
+
+- name: install ember-cli and bower
+  npm:
+    name: "{{ item }}"
+    global: yes
+  with_items:
+    - ember-cli@latest
+    - bower
+    - forever
+
+- name: create lafiya directories
+  file: 
+    path: "{{ item }}" 
+    state: directory
+    group: "{{ devops_user }}"
+    owner: "{{ devops_user }}"
+  with_items:
+    - "{{ lafiya_server_root }}"
+    - "{{ lafiya_client_root }}"
+
+- name: install lafiya client
+  block:
+    - git: repo={{ lafiya_client_repo }} dest={{ lafiya_client_root }}
+    - npm: path={{ lafiya_client_root }}
+    - bower: path={{ lafiya_client_root }}
+  become: true
+  become_user: "{{ devops_user }}"
+
+- name: install logstash and elastic search
+  block:
+    - apt_key: url={{ lafiya_elastic_gpg }}
+    - apt_repository: repo='deb {{ lafiya_elastic_source }} stable main'
+    - apt: name={{ item }}
+      with_items:
+        - elasticsearch
+        - openjdk-8-jdk
+        - logstash
+  tags:
+    - search
+
+- name: install lafiya server
+  block:
+    - git: repo={{ lafiya_server_repo }} dest={{ lafiya_server_root }}
+    - npm: path={{ lafiya_server_root }}
+    - stat: path={{ lafiya_server_root }}/config-example.js
+      register: server_config
+    - command: mv {{ lafiya_server_root }}/config-example.js {{ lafiya_server_root }}/config.js
+      when: server_config.stat.exists
+  become: true
+  become_user: "{{ devops_user }}"
+  tags:
+    - app_server

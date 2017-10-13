@@ -1,0 +1,11 @@
+---
+- name: install docker
+  block:
+    - apt_repository: repo='deb [arch=amd64] {{ docker_source }} {{ ansible_distribution_release }} stable' 
+    - apt_key: url={{ docker_gpg_key }}
+    - apt: name="docker-ce={{ docker_version }}" update_cache=yes
+
+- name: add user to docker group
+  block:
+    - group: name=docker
+    - user: name={{ devops_user }} groups=docker append=yes

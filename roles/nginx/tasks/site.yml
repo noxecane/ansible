@@ -1,15 +1,22 @@
 ---
-- name: add app config
-  template:
-    src: app.conf
-    dest: "/etc/nginx/sites-available/{{ site_domain }}.conf"
-  notify:
-    - reload nginx
+- name: confirm all variables have been set
+  fail: 
+    msg: "{{ item }} is not defined"
+  when: item is not defined
+  with_items:
+    - site_domain
+    - site_certificate
+    - site_ca_certificate
+    - site_certificate_key
+    - site_dhparam
+    - site_web_root
 
-- name: activate the application
-  file:
-    src: "/etc/nginx/sites-available/{{ site_domain }}.conf"
-    dest: "/etc/nginx/sites-enabled/{{ site_domain }}.conf"
-    state: link
-  notify:
-    - reload nginx
+- name: create site config
+  block:
+    - template: src=site.conf dest={{ nginx_sites }}/{{ site_domain }}.conf
+    - file:
+        src: "{{ nginx_sites }}/{{ site_domain }}.conf"
+        dest: "{{ nginx_active_sites }}/{{ site_domain }}.conf"
+        state: link
+      notify:
+        - reload nginx

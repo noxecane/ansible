@@ -1,0 +1,3 @@
+---
+devops_user: arewa
+shell_aliases: "/home/{{ devops_user }}/.bash_aliases"

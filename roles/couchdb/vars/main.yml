@@ -1,0 +1,3 @@
+---
+couchdb_source: https://apache.bintray.com/couchdb-deb
+couchdb_key: https://couchdb.apache.org/repo/bintray-pubkey.asc

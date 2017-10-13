@@ -1,0 +1,4 @@
+---
+devops_user: arewa
+docker_source: https://download.docker.com/linux/ubuntu
+docker_gpg_key: "{{ docker_source }}/gpg"

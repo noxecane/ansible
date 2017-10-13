@@ -1,15 +1,18 @@
 ---
-- name: add certbot repo
-  apt_repository:
-    repo: "ppa:certbot/certbot"
+- name: confirm all variables have been set
+  fail: 
+    msg: "{{ item }} is not defined"
+  when: item is not defined
+  with_items:
+    - certbot_domains
+    - certbot_email
 
 - name: install certbot
-  apt: 
-    name: certbot 
-    state: present
-    update_cache: yes
-  notify:
-    - stop nginx
+  block:
+    - apt_repository: repo=ppa:certbot/certbot
+    - apt: name=certbot state=present update_cache=yes
+      notify:
+        - stop nginx
 
 - name: generate dhparams file
   command: openssl dhparam -out /etc/letsencrypt/live/{{ certbot_domains[0] }}/dhparam.pem 2048
